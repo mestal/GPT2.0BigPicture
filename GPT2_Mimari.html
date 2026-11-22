@@ -96,6 +96,15 @@
   .farr{color:#94a3b8;font-size:1.2rem}
   .ctxrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
   .ctxrow .tok{text-align:center;font-size:.9rem}
+  .mrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:8px 0}
+  .mrow .op{font-size:1.3rem;font-weight:700;color:#64748b}
+  .mcap{text-align:center;font-size:.78rem;color:var(--muted);margin-bottom:2px}
+  .mt{width:auto!important;margin:0!important}
+  .mt td{text-align:center!important;min-width:44px}
+  .mt td.rl{color:#6b7280;background:#f1f5f9;font-family:inherit;font-size:.72rem;text-align:left!important}
+  .mt.lock td:not(.rl){background:#f1f5f9;color:#475569}
+  .mt.res td:not(.rl){background:#eaf2fb;color:#1d4f8f;font-weight:600}
+  .xi{width:56px;text-align:center;border:2px solid #f59e0b;background:#fffbeb;border-radius:6px;padding:4px;font:inherit}
 </style>
 </head>
 <body>
@@ -197,7 +206,7 @@
     <!-- 3 -->
     <section class="card open" id="c3" data-shape="2 × 768" data-note="Dikkat: kelimeler birbirine bakıyor">
       <h2>3. MHA (Multi-Head Attention / Çok Başlı Dikkat) <small>başlığa tıkla: aç/kapat</small></h2>
-      <div>Yatay paralel bölünme: <span class="chip">12 baş × 64 boyut</span> &nbsp; Giriş <span class="chip">2×768</span> × Ağırlık <span class="chip">768×768</span> → Q, K, V</div>
+      <div>Yatay paralel bölünme: <span class="chip">12 baş × 64 boyut</span><br><b>X</b> (girdi, <span class="chip">2×768</span>) × <b>Wq, Wk, Wv</b> (modelin ağırlıkları, her biri <span class="chip">768×768</span>) = <b>Q, K, V</b> (her biri <span class="chip">2×768</span>)</div>
       <div class="heads" id="heads"></div>
       <div class="detail">
         <div class="why"><b class="l">Neden?</b> 768 boyutlu vektör 12 eşit parçaya bölünür (her biri 2 × 64). Her baş cümleye <b>farklı bir açıdan</b> bakar (biri zamana, biri dil bilgisine, biri anlama...). Sonra hepsi birleştirilir → <span class="chip">2 × 768</span>. (Üstteki başlara tıkla: hepsi aynı anda çalışır, burada sadece vurguluyoruz.)</div>
@@ -231,6 +240,38 @@
         </div>
         <div id="qkvOut"></div>
         <div class="warn"><b class="l">⚠️ Sadeleştirmeler:</b> (1) Gerçekte Q ve K 64 boyutludur ve puanlar √64'e bölünür (scaled dot-product / ölçekli nokta çarpım), burada bölmedik. (2) "Zaman arıyorum" gibi anlamları biz uydurduk; gerçekte Wq, Wk, Wv <b>backpropagation ile kendiliğinden öğrenilir</b>, kimse onlara anlam yazmaz. (3) Sabah sadece kendini görür çünkü GPT-2 geleceğe bakamaz (causal mask / nedensel maske): her kelime sadece kendinden önceki kelimelere ve kendine bakar.</div>
+        <hr class="d">
+        <h3>🧮 Q, K, V tam olarak nedir ve nereden gelir?</h3>
+        <div class="why"><b class="l">Önce karışıklığı çözelim.</b> Üç ayrı şey var:
+          <ul style="margin:6px 0">
+            <li><b>X</b> = girdi (<span class="chip">2×768</span>): "Sabah armut"un vektörleri. <b>Her cümlede değişir.</b></li>
+            <li><b>Wq, Wk, Wv</b> = ağırlık matrisleri (her biri <span class="chip">768×768</span>): <b>Modelin parçasıdır, eğitimden gelir, çıkarımda değişmez.</b> 🔒</li>
+            <li><b>Q, K, V</b> = çarpımın sonucu (her biri <span class="chip">2×768</span>): <b>Her girdi için o an hesaplanır</b>, modelde saklı değildir.</li>
+          </ul>
+          Yani "768×768" olan Q, K, V değil, onları üreten <b>ağırlıklardır</b>.</div>
+        <div class="why"><b class="l">"Q, K, V'yi model nasıl buluyor?"</b> Bulmuyor, <b>hesaplıyor</b>: <span class="chip">Q = X·Wq</span>, <span class="chip">K = X·Wk</span>, <span class="chip">V = X·Wv</span>. Aynı X, üç farklı matrisle çarpıldığı için üç farklı vektör çıkar.<br>
+          <b>Roller nereden geliyor?</b> İki katman var:
+          <ol style="margin:6px 0">
+            <li><b>Formülün yapısı:</b> Q ile K çarpılıp <i>puan</i> çıkarılır. V ise o puanlardan çıkan yüzdelerle <i>karıştırılır</i>. Roller bu yerleşimden gelir.</li>
+            <li><b>Sayıların içeriği:</b> Başta üç matris de rastgele ve birbirinden bağımsızdır. Eğitimde Wq ve Wk, "puanlar doğru kelimelere yüksek çıksın" yönünde, Wv ise "karışım işe yarar bilgi taşısın" yönünde kayar. Farklı işe yaradıkları için farklı sayılara oturur. (Bkz. <a class="lnk" href="GPT2_Egitim.html#sayilar">Eğitim sayfası</a>)</li>
+          </ol>
+          Not: Gerçek GPT-2'de üç matris tek bir büyük matriste (768×2304) saklanır. Mantık aynı.</div>
+
+        <b>Gerçek sayılarla örnek.</b> 768 yerine <b>4 boyutlu</b> mini model, tek baş, 2 token. Aşağıdaki her sayı o an hesaplanıyor. <b>Girdi X'in sayılarını değiştirip</b> (sarı kutular) Q, K, V'nin değiştiğini, ağırlıkların (🔒) ise sabit kaldığını gör.
+        <div id="xin" class="row"></div>
+        <div id="qkvCalc"></div>
+        <div class="warn"><b class="l">⚠️ Sayılar uydurma.</b> Ağırlıkları elle okunaklı seçtim, gerçek GPT-2 değerleri değil. Ayrıca başlangıç değerlerinde "armut" Sabah'a %20 bakıyor (sarı kutuları değiştirince oran değişir). Yukarıdaki 2 boyutlu örnekte %65'ti. İkisi farklı mini örnekler, sayılar bilerek farklı.</div>
+
+        <b>Modelden gelen ve her girdide hesaplanan şeyler:</b>
+        <table class="pt gl" style="margin-top:6px">
+          <tr><th>🔒 Modelden gelir, sabit (eğitimde öğrenildi)</th><th>🔄 Her girdide yeniden hesaplanır</th></tr>
+          <tr><td>Kelime tablosu (50.257×768) ve konum tablosu (1.024×768)</td><td>X: girdi vektörleri (2×768)</td></tr>
+          <tr><td>Wq, Wk, Wv (768×768) ve birleştirme sonrası çıkış matrisi</td><td>Q, K, V (2×768), dikkat puanları, yüzdeler</td></tr>
+          <tr><td>FFN ağırlıkları: 768×3.072 ve 3.072×768</td><td>FFN ara sonucu (2×3.072)</td></tr>
+          <tr><td>LM Head (kelime tablosuyla paylaşılır)</td><td>Logits (1×50.257) ve olasılıklar</td></tr>
+        </table>
+        <div style="font-size:.88rem;color:var(--muted);margin-top:4px">Soldaki her şey "modelin dosyası"dır (GPT-2 small'da yaklaşık 124 milyon sayı). Çıkarımda bu sayılara dokunulmaz.</div>
+
       </div>
     </section>
     <div class="arrow">↓</div>
@@ -251,6 +292,7 @@
         </ol>
         <div class="why"><b class="l">Neden çarpıyoruz?</b> 768 özelliği farklı kombinasyonlarla karıştırıp 3.072 yeni detay (soru) üretmek için.<br>Örnek: <i>"Hem sabah mı hem meyve mi?"</i></div>
 
+        <div class="good"><b>🔒 FFN ağırlıkları da modelden gelir.</b> Genişletme matrisi (768×3.072) ve özetleme matrisi (3.072×768) eğitimde öğrenilmiş sabit sayılardır, çıkarımda değişmez. Her girdide yeniden hesaplanan tek şey <b>ara sonuçtur</b> (2×3.072).</div>
         <hr class="d">
         <h3>📈 GELU nasıl davranıyor? Kaydırıp bak</h3>
         <div class="row">x değeri: <input type="range" id="gx" min="-4" max="4" step="0.05" value="1"> <span class="mono" id="gxv"></span></div>
@@ -468,6 +510,52 @@ function renderGen(){
 document.getElementById('genStep').onclick=e=>{e.stopPropagation();if(gen<GEN.length){ctx.push(GEN[gen].tok);gen++;renderGen()}};
 document.getElementById('genReset').onclick=e=>{e.stopPropagation();gen=0;ctx=['Sabah','armut'];renderGen()};
 renderGen();
+
+
+// ---------- Gerçek sayılarla Q,K,V (4 boyutlu mini model) ----------
+const WQ=[[1,0,.5,0],[0,1,0,.5],[.5,0,1,0],[0,.5,0,1]];
+const WK=[[1,0,0,.5],[0,.5,1,0],[.5,1,0,0],[0,0,.5,1]];
+const WV=[[.5,0,1,0],[0,1,0,.5],[1,0,.5,0],[0,.5,0,1]];
+let XM=[[1,.5,0,-.5],[0,1,1,.5]];
+const WORDS=['Sabah','armut'];
+const mm=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+const trn=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+const f2=v=>(Math.round(v*100)/100).toFixed(2);
+function T(M,rows,cls){return '<table class="pt mt '+(cls||'')+'">'+M.map((r,i)=>'<tr>'+(rows?'<td class="rl">'+rows[i]+'</td>':'')+r.map(v=>'<td>'+(v===null?'—':f2(v))+'</td>').join('')+'</tr>').join('')+'</table>'}
+function cap(t){return '<div class="mcap">'+t+'</div>'}
+function eqRow(items){return '<div class="mrow">'+items.map(x=>x==='*'||x==='='||x==='/'?'<span class="op">'+(x==='*'?'×':x)+'</span>':'<div>'+x+'</div>').join('')+'</div>'}
+function renderQKVnum(){
+  const Q=mm(XM,WQ),K=mm(XM,WK),V=mm(XM,WV);
+  const S=mm(Q,trn(K)).map(r=>r.map(v=>v/2));
+  const Sm=S.map((r,i)=>r.map((v,j)=>j>i?null:v));
+  const Wt=Sm.map(r=>{const vis=r.filter(v=>v!==null).map(Math.exp);const sm=vis.reduce((a,b)=>a+b,0);let k=0;return r.map(v=>v===null?null:vis[k++]/sm)});
+  const O=Wt.map(r=>[0,1,2,3].map(c=>r.reduce((s,w,j)=>s+(w===null?0:w*V[j][c]),0)));
+  const row=XM[1],col=WQ.map(r=>r[0]);
+  const arith=row.map((v,k)=>f2(v)+'×'+f2(col[k])).join(' + ');
+  let h='';
+  h+='<b>1) Q, K, V = X × ağırlık</b>';
+  h+=eqRow([cap('X (girdi, 2×4)')+T(XM,WORDS),'*',cap('Wq 🔒 (4×4)')+T(WQ,null,'lock'),'=',cap('Q (2×4)')+T(Q,WORDS,'res')]);
+  h+=eqRow([cap('X')+T(XM,WORDS),'*',cap('Wk 🔒')+T(WK,null,'lock'),'=',cap('K (2×4)')+T(K,WORDS,'res')]);
+  h+=eqRow([cap('X')+T(XM,WORDS),'*',cap('Wv 🔒')+T(WV,null,'lock'),'=',cap('V (2×4)')+T(V,WORDS,'res')]);
+  h+='<div class="why"><b class="l">Bir hücre nasıl hesaplanıyor?</b> Q[armut][0] = armut satırı × Wq'+"'"+'nun 0. sütunu:<br><span class="mono">'+arith+' = <b>'+f2(Q[1][0])+'</b></span></div>';
+  h+='<b>2) Puan = Q × Kᵀ ÷ √4</b> (√4 = 2: boyut sayısının karekökü)';
+  h+=eqRow([cap('Puan (2×2)')+T(Sm,WORDS,'res'),cap('— = Sabah geleceği (armut) göremez, causal mask')]);
+  h+='<b>3) Softmax: her satırı yüzdeye çevir</b>';
+  h+=eqRow([cap('Yüzde (2×2)')+T(Wt.map(r=>r.map(v=>v===null?null:v*100)),WORDS,'res')]);
+  h+='<div style="font-size:.85rem;color:var(--muted)">Satırlar %100 eder. armut satırı: Sabah\'a %'+f2(Wt[1][0]*100)+', kendine %'+f2(Wt[1][1]*100)+' bakıyor.</div>';
+  h+='<b>4) Çıktı = Yüzde × V</b>';
+  h+=eqRow([cap('Yüzde')+T(Wt.map(r=>r.map(v=>v===null?null:v)),WORDS),'*',cap('V')+T(V,WORDS),'=',cap('Çıktı (2×4)')+T(O,WORDS,'res')]);
+  h+='<div class="why"><b class="l">Sonuç:</b> armut\'un yeni vektörü = <b>'+f2(Wt[1][0])+' × V[Sabah] + '+f2(Wt[1][1])+' × V[armut]</b> = ['+O[1].map(f2).join(', ')+']. Bu vektör bir sonraki katmana X yerine girer.</div>';
+  document.getElementById('qkvCalc').innerHTML=h;
+}
+(function(){
+  const box=document.getElementById('xin');
+  let h='';
+  XM.forEach((r,i)=>{h+='<div style="text-align:center"><div class="mcap">'+WORDS[i]+' (X satırı)</div>'+r.map((v,j)=>'<input class="xi" type="number" step="0.1" value="'+v+'" data-i="'+i+'" data-j="'+j+'">').join(' ')+'</div>'});
+  box.innerHTML=h;
+  box.querySelectorAll('input').forEach(inp=>{inp.addEventListener('click',e=>e.stopPropagation());inp.oninput=()=>{const v=parseFloat(inp.value);XM[+inp.dataset.i][+inp.dataset.j]=isNaN(v)?0:v;renderQKVnum()}});
+  renderQKVnum();
+})();
 
 // ---------- kart gezintisi ----------
 function setActive(i){
