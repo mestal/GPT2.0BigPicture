@@ -228,8 +228,19 @@
         <ol>
           <li><b>Eşleşme puanı:</b> Soran kelimenin Q'sunu her kelimenin K'siyle çarp (nokta çarpım = benzerlik). Büyük sayı = iyi eşleşme.</li>
           <li><b>Softmax (Yumuşatılmış Maksimum):</b> Puanları yüzdeye çevir (toplam %100).</li>
-          <li><b>Karıştır:</b> Yüzdelerle V'leri karıştır. Çıkan vektör, kelimenin <b>"etrafındakilerden bilgi alınmış" yeni hali</b> olur.</li>
+          <li><b>Karıştır:</b> Her kelimenin V'sini kendi yüzdesiyle çarpıp topla. Çıkan vektör, kelimenin <b>"etrafındakilerden bilgi alınmış" yeni hali</b> olur. (Aşağıda ayrıntısı var.)</li>
         </ol>
+        <div class="why"><b class="l">"Karıştırmak" ne demek?</b> Burada karıştırmak, <b>ağırlıklı ortalama almak</b> demek: her V vektörünü kendi yüzdesiyle çarpıp hepsini toplamak. <b>Seçim yapmıyoruz</b> ("en yüksek yüzdeliyi al" demiyoruz). <b>Herkesten payı kadar alıyoruz.</b>
+          <ul style="margin:6px 0">
+            <li><b>Boya benzetmesi:</b> %20 sarı + %80 mavi boya karıştırırsan mavimsi bir ton çıkar. Yüzde yüksek olan rengin etkisi büyük olur. Dikkatte "boyalar" V vektörleri, "yüzdeler" dikkat yüzdeleri.</li>
+            <li><b>Ders notu benzetmesi:</b> Ortalama hesaplarken kredisi yüksek ders daha çok etki eder. Burada da yüzdesi yüksek kelimenin V'si sonuca daha çok etki eder.</li>
+            <li><b>Her sütun (boyut) ayrı hesaplanır:</b> Sonuç[boyut i] = %20 × V[Sabah][i] + %80 × V[armut][i]. Vektör boyutu değişmez (4 girer, 4 çıkar).</li>
+            <li><b>Neden böyle?</b> "armut" artık sadece kendi bilgisini değil, <b>%20 oranında "Sabah" bilgisini de</b> taşıyor. Dikkat (attention) bu: bilgi kelimeler arasında yüzdelerle akıyor.</li>
+            <li><b>Karıştırma ≠ birleştirme:</b> 12 başın çıktılarını yan yana dizmek (concat / birleştirme) ayrı bir işlem. Burada aynı boyuttaki vektörler <b>üst üste toplanıyor</b>.</li>
+          </ul></div>
+        <b>Kendin dene:</b> "armut" Sabah'a ne kadar baksın? İki V vektörünün nasıl karıştığını gör (mini örnekteki V değerleri).
+        <div class="row">Sabah'a verilen yüzde: <input type="range" id="mixP" min="0" max="100" step="5" value="20"> <span class="mono" id="mixPv"></span></div>
+        <div id="mixOut"></div>
 
         <b>Kendin dene:</b> Toy örnek, boyutlar sadece 2: [zaman, meyve]. Soran kelimeyi seç.
         <div class="row">
@@ -543,9 +554,10 @@ function renderQKVnum(){
   h+='<b>3) Softmax: her satırı yüzdeye çevir</b>';
   h+=eqRow([cap('Yüzde (2×2)')+T(Wt.map(r=>r.map(v=>v===null?null:v*100)),WORDS,'res')]);
   h+='<div style="font-size:.85rem;color:var(--muted)">Satırlar %100 eder. armut satırı: Sabah\'a %'+f2(Wt[1][0]*100)+', kendine %'+f2(Wt[1][1]*100)+' bakıyor.</div>';
-  h+='<b>4) Çıktı = Yüzde × V</b>';
+  h+='<b>4) Çıktı = Yüzde × V</b> (karıştırma: her sütunda yüzdelerle V\'lerin ağırlıklı toplamı)';
   h+=eqRow([cap('Yüzde')+T(Wt.map(r=>r.map(v=>v===null?null:v)),WORDS),'*',cap('V')+T(V,WORDS),'=',cap('Çıktı (2×4)')+T(O,WORDS,'res')]);
   h+='<div class="why"><b class="l">Sonuç:</b> armut\'un yeni vektörü = <b>'+f2(Wt[1][0])+' × V[Sabah] + '+f2(Wt[1][1])+' × V[armut]</b> = ['+O[1].map(f2).join(', ')+']. Bu vektör bir sonraki katmana X yerine girer.</div>';
+  h+='<div class="why"><b class="l">Karıştırma tek hücrede:</b> Çıktı[armut][0] = '+f2(Wt[1][0])+' × V[Sabah][0] + '+f2(Wt[1][1])+' × V[armut][0] = '+f2(Wt[1][0])+'×'+f2(V[0][0])+' + '+f2(Wt[1][1])+'×'+f2(V[1][0])+' = <b>'+f2(O[1][0])+'</b></div>';
   document.getElementById('qkvCalc').innerHTML=h;
 }
 (function(){
@@ -556,6 +568,22 @@ function renderQKVnum(){
   box.querySelectorAll('input').forEach(inp=>{inp.addEventListener('click',e=>e.stopPropagation());inp.oninput=()=>{const v=parseFloat(inp.value);XM[+inp.dataset.i][+inp.dataset.j]=isNaN(v)?0:v;renderQKVnum()}});
   renderQKVnum();
 })();
+
+
+// ---------- Karıştırma (ağırlıklı ortalama) demosu ----------
+const VS=[0.5,0.25,1,-0.25], VA=[1,1.25,0.5,1];
+function renderMix(){
+  const p=parseInt(document.getElementById('mixP').value)/100;
+  document.getElementById('mixPv').textContent='Sabah %'+Math.round(p*100)+', armut %'+Math.round((1-p)*100);
+  let h='<div style="height:22px;border-radius:8px;border:1px solid #cbd5e1;margin:6px 0;background:linear-gradient(90deg,#f4c430 0%,#f4c430 '+(p*100)+'%,#2f6fb0 '+(p*100)+'%,#2f6fb0 100%);opacity:.9"></div>';
+  h+='<div class="mini" style="display:block;margin-bottom:6px">Sarı = Sabah\'ın payı, mavi = armut\'un payı</div>';
+  h+='<table class="pt"><tr><th>Boyut</th><th>V[Sabah]</th><th>V[armut]</th><th>Karışım = yüzde × V[Sabah] + yüzde × V[armut]</th></tr>';
+  for(let i=0;i<4;i++){const r=p*VS[i]+(1-p)*VA[i];
+    h+='<tr><td>'+i+'</td><td>'+VS[i].toFixed(2)+'</td><td>'+VA[i].toFixed(2)+'</td><td class="tot">'+p.toFixed(2)+'×'+VS[i].toFixed(2)+' + '+(1-p).toFixed(2)+'×'+VA[i].toFixed(2)+' = '+r.toFixed(2)+'</td></tr>'}
+  h+='</table><div style="font-size:.85rem;color:var(--muted)">%0 → sonuç tamamen armut\'un V\'si. %100 → tamamen Sabah\'ın V\'si. Arası ikisinin karışımı.</div>';
+  document.getElementById('mixOut').innerHTML=h;
+}
+document.getElementById('mixP').oninput=renderMix;renderMix();
 
 // ---------- kart gezintisi ----------
 function setActive(i){
