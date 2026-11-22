@@ -295,13 +295,45 @@
         <div class="ebar" style="width:260px">3.072 (×4)</div> →
         <div class="ebar" style="width:90px">768</div>
       </div>
+      <div class="why"><b class="l">💡 Sezgi (tek cümlede):</b> Attention'da kelimeler birbirinden bilgi aldı. FFN'de <b>her kelime kendi masasına döner ve o bilgiyi tek başına işler</b>: genişlet (3.072 soru sor) → kapıdan geçir (GELU) → özetle (768).</div>
       <div class="detail">
-        <ol>
-          <li><b>Genişletme:</b> <span class="chip">2×768</span> × <span class="chip">768×3.072</span> → <span class="chip">2×3.072</span></li>
-          <li><b>Aktivasyon (GELU):</b> Her sayıyı bir "kapıdan" geçirir. Önemli (pozitif) detaylar büyük ölçüde geçer, alakasız (negatif) olanlar neredeyse söner.</li>
-          <li><b>Özetleme:</b> <span class="chip">2×3.072</span> × <span class="chip">3.072×768</span> → <span class="chip">2×768</span></li>
-        </ol>
-        <div class="why"><b class="l">Neden çarpıyoruz?</b> 768 özelliği farklı kombinasyonlarla karıştırıp 3.072 yeni detay (soru) üretmek için.<br>Örnek: <i>"Hem sabah mı hem meyve mi?"</i></div>
+        <div class="why"><b class="l">1) Attention ile FFN'nin farkı (toplantı benzetmesi)</b><br>
+          <b>Attention = toplantı.</b> Kelimeler birbirine bakar, bilgi alışverişi yapar ("armut" Sabah'tan bilgi aldı).<br>
+          <b>FFN = toplantıdan sonra masa başı.</b> Her kelime kendi masasına döner ve aldığı bilgiyi <b>tek başına</b> işler. Bu aşamada kelimeler birbirine <b>karışmaz</b>: her token aynı işleme makinesinden ayrı ayrı geçer (aynı ağırlıklar, ayrı hesap).</div>
+
+        <h3>2) Genişlet → Kapıdan geçir → Özetle</h3>
+        <div class="why"><b class="l">Kontrol listesi benzetmesi.</b> 768 sayılık vektör, kelimenin "kısa özeti"dir. FFN bu özeti alıp 3.072 maddelik uzun bir <b>kontrol listesinden</b> geçirir:
+          <ol style="margin:6px 0">
+            <li><b>Genişletme (768 → 3.072):</b> Her madde bir <b>soru</b>: "Bu kelime kahvaltı bağlamında mı?", "tatlı bir meyve mi?", "canlı bir şey mi?"... 3.072 soru, her biri için bir <b>"ne kadar evet"</b> puanı. <span class="chip">2×768</span> × <span class="chip">768×3.072</span> = <span class="chip">2×3.072</span></li>
+            <li><b>GELU (kapı):</b> "Evet" diyen maddeler <b>açık kalır</b> (puan korunur), "hayır" diyenler <b>kapanır</b> (puan sıfıra yakın).</li>
+            <li><b>Özetleme (3.072 → 768):</b> Açık kalan her madde, kendi bilgisini 768'lik vektöre <b>ekler</b> ("bu bir kahvaltı yiyeceği" gibi). Sonuç tekrar küçük: <span class="chip">2×3.072</span> × <span class="chip">3.072×768</span> = <span class="chip">2×768</span></li>
+          </ol>
+          <b>Neden 4 kat (3.072)?</b> Soru sayısı, modelin "hafıza kapasitesi" gibidir. Ne kadar çok soru sorabilirse o kadar çok ayrıntıyı yakalar. 4 kat, tasarımcıların seçtiği bir orandır, doğa kanunu değil.</div>
+
+        <h3>3) İki matris neyi temsil ediyor?</h3>
+        <ul>
+          <li><b>W1 (768×3.072):</b> 3.072 sütunun her biri bir <b>dedektör</b>, yani 768 sayılık bir "kalıp". Girdi bu kalıba ne kadar benziyorsa (nokta çarpım) puan o kadar yüksek. "Bu madde ne zaman tetiklensin?" sorusunun cevabı.</li>
+          <li><b>W2 (3.072×768):</b> 3.072 satırın her biri "bu dedektör açıksa vektöre <b>ne ekleyeyim</b>" bilgisi.</li>
+          <li>Bir yorum olarak FFN, "anahtar–değer hafızası" gibi düşünülür: W1 = ne zaman tetiklensin, W2 = tetiklenince ne yazsın. (Dikkat: bu, attention'daki Q/K/V ile aynı şey <b>değil</b>.)</li>
+          <li>İkisi de <b>eğitimde öğrenilir</b>. Hangi dedektörün neyi yakalayacağına kimse karar vermez.</li>
+        </ul>
+
+        <h3>4) Kapı (GELU) neden şart?</h3>
+        <div class="why">Kapı olmazsa iki matris art arda çarpılır ve <b>tek bir matrise indirgenir</b> (W1 × W2 = tek matris). 3.072'ye genişletmenin hiçbir anlamı kalmaz. Küçük bir sayı örneği: iki işlem düşün, "×3" sonra "×2".
+          <div class="row">Giriş x: <input type="range" id="gateX" min="-3" max="3" step="0.5" value="-1"> <span class="mono" id="gateXv"></span></div>
+          <div id="gateOut"></div>
+          Kapısız hâli hep "×6"dır, yani tek bir çarpmayla yapılabilir. Kapı ise "negatifse sustur" diyen, <b>tek bir çarpmayla yapılamayan</b> bir davranış ekler. "Doğrusal olmayan" (non-linear) tam olarak budur. (Burada kapı olarak basit "negatifi sıfırla" kullandım. GELU bunun pürüzsüz, yumuşak halidir.)</div>
+
+        <h3>5) Gerçek sayılarla mini örnek (4 → 8 → 4)</h3>
+        <div>768 yerine <b>4</b>, 3.072 yerine <b>8</b> boyut. Kelime vektörü 4 sayı: <b>[zaman, yiyecek, tatlılık, canlılık]</b>. 8 dedektör var. Bir kelime seç ve hangi dedektörlerin açıldığını gör.</div>
+        <div class="row">
+          <button class="alt ffw" data-f="0">Sabah</button>
+          <button class="alt ffw" data-f="1">armut (tek başına)</button>
+          <button class="alt ffw" data-f="2">armut (Sabah'tan bilgi almış)</button>
+        </div>
+        <div style="font-size:.85rem;color:var(--muted);text-align:center">Son seçenek, attention'dan sonra FFN'ye giren halidir: önceki örnekteki gibi %20 Sabah + %80 armut karışımı.</div>
+        <div id="ffnOut"></div>
+        <div class="warn"><b class="l">⚠️ Uydurma değerler.</b> Dedektör isimleri ve sayılar anlatım için uydurulmuştur. Gerçek modelde 3.072 dedektörün çoğunun insanın koyabileceği tek bir adı yoktur, kavramlar birçok dedektöre yayılır ve hepsi eğitimle kendiliğinden oluşur. Gerçek GPT-2'de FFN çıkışı girişe eklenir (residual connection / artık bağlantı). Bu sayfa henüz onu anlatmıyor. GELU sonrası küçük negatif değerler (−0,17 gibi) normaldir, aşağıdaki GELU grafiğine bak.</div>
 
         <div class="good"><b>🔒 FFN ağırlıkları da modelden gelir.</b> Genişletme matrisi (768×3.072) ve özetleme matrisi (3.072×768) eğitimde öğrenilmiş sabit sayılardır, çıkarımda değişmez. Her girdide yeniden hesaplanan tek şey <b>ara sonuçtur</b> (2×3.072).</div>
         <hr class="d">
@@ -584,6 +616,48 @@ function renderMix(){
   document.getElementById('mixOut').innerHTML=h;
 }
 document.getElementById('mixP').oninput=renderMix;renderMix();
+
+
+// ---------- FFN: kapı gerekliliği (x3 sonra x2) ----------
+function renderGate(){
+  const x=parseFloat(document.getElementById('gateX').value);
+  document.getElementById('gateXv').textContent='x = '+x;
+  const a=x*3,noGate=a*2,g=Math.max(0,a),withGate=g*2;
+  document.getElementById('gateOut').innerHTML='<table class="pt"><tr><th></th><th>×3</th><th>kapı (negatifi sıfırla)</th><th>×2</th><th>sonuç</th></tr>'+
+   '<tr><td>Kapısız</td><td>'+a+'</td><td>(yok)</td><td>'+noGate+'</td><td class="tot">'+noGate+' (hep ×6)</td></tr>'+
+   '<tr><td>Kapılı</td><td>'+a+'</td><td>'+g+'</td><td>'+withGate+'</td><td class="tot">'+withGate+'</td></tr></table>';
+}
+document.getElementById('gateX').oninput=renderGate;renderGate();
+
+// ---------- FFN: 4 → 8 → 4 mini örnek ----------
+const FN=['Sabah yemeği (kahvaltı)','Tatlı meyve','Canlı / doğal şey','Sadece zaman ifadesi','Yenilebilir şey','Soyut kavram','Ağaçta yetişen','Gün ışığı'];
+const FW1=[[4,1,0,0],[0,1,2,.5],[0,.5,.5,2],[2,-1.5,0,0],[0,2,.5,0],[-1,-1,-1,-1],[-.5,.8,.6,1.5],[1.5,0,0,.5]];
+const FB1=[-.9,-1.2,-1.0,-1.0,-.8,.5,-1.2,-.8];
+const FW2=[[.5,.5,0,0],[0,.3,.8,0],[0,0,0,.8],[.8,-.3,0,0],[0,.8,.2,0],[.2,.2,.2,.2],[0,.2,.2,.6],[.7,0,0,.2]];
+const FX=[[.9,0,.1,.2],[0,.9,.7,.8],[.18,.72,.58,.68]];
+const FD=['zaman','yiyecek','tatlılık','canlılık'];
+let ffI=2;
+function renderFFN(){
+  document.querySelectorAll('.ffw').forEach(b=>b.classList.toggle('sel',+b.dataset.f===ffI));
+  const x=FX[ffI];let out=[0,0,0,0];
+  let h='<div style="margin:8px 0"><b>Girdi x</b> = ['+x.map(f2).join(', ')+'] <span style="color:#6b7280">('+FD.join(', ')+')</span></div>';
+  h+='<div style="overflow-x:auto"><table class="pt"><tr><th>Dedektör (soru)</th><th>Kalıp (W1 sütunu)</th><th>Eşik</th><th>Ön puan</th><th>Kapı sonrası (GELU)</th><th>Açıksa yazdığı (W2 satırı)</th></tr>';
+  FN.forEach((n,j)=>{
+    const z=x.reduce((s,v,i)=>s+v*FW1[j][i],0)+FB1[j],a=gelu(z);
+    FW2[j].forEach((w,i)=>out[i]+=a*w);
+    const on=a>0.25, w=Math.max(0,Math.min(100,a/2.7*100));
+    h+='<tr style="'+(on?'background:#fff7e6;':'opacity:.65;')+'"><td style="'+(on?'font-weight:700':'')+'">'+n+(on?' 🟢':'')+'</td>'+
+       '<td>['+FW1[j].join(', ')+']</td><td>'+FB1[j]+'</td><td>'+f2(z)+'</td>'+
+       '<td class="tot">'+f2(a)+' <span class="pbar" style="width:'+w*0.5+'px;background:#e08a1e"></span></td>'+
+       '<td>['+FW2[j].join(', ')+']</td></tr>';
+  });
+  h+='</table></div>';
+  h+='<div class="why"><b class="l">Çıkış</b> = Σ (kapı sonrası puan × W2 satırı) = <span class="chip">['+out.map(f2).join(', ')+']</span> ('+FD.join(', ')+')<br>'+
+     '<span style="font-size:.88rem;color:var(--muted)">Şekil: x (1×4) × W1 (4×8) = (1×8) → kapı → (1×8) × W2 (8×4) = (1×4). 4 girdi, 8 boyuta genişledi, tekrar 4 çıktı. 🟢 = açık kalan dedektörler. Eşik: "bu kadar benzemezse açılma" demenin sayısal hali.</span></div>';
+  document.getElementById('ffnOut').innerHTML=h;
+}
+document.querySelectorAll('.ffw').forEach(b=>b.onclick=e=>{e.stopPropagation();ffI=+b.dataset.f;renderFFN()});
+renderFFN();
 
 // ---------- kart gezintisi ----------
 function setActive(i){

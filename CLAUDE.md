@@ -12,7 +12,7 @@ GPT-2'yi (Generative Pre-trained Transformer 2 / Üretken Önceden Eğitilmiş D
 
 | Dosya | İçerik |
 |---|---|
-| `GPT2_Mimari.html` | **Çıkarım (Inference)** sayfası. Model eğitilmiş ve ağırlıklar sabit. Kartlar: 1 Tokenizer, 2 Embedding + Konum (768 sayı ne demek, konum vektörü sezgisi), 3 MHA (Q/K/V, gerçek sayılı mini örnek, "karıştırma" açıklaması), 4 FFN + GELU, 5 LM Head, 6 Softmax (sıcaklık), 7 Üretim döngüsü (autoregressive). |
+| `GPT2_Mimari.html` | **Çıkarım (Inference)** sayfası. Model eğitilmiş ve ağırlıklar sabit. Kartlar: 1 Tokenizer, 2 Embedding + Konum (768 sayı ne demek, konum vektörü sezgisi), 3 MHA (Q/K/V, gerçek sayılı mini örnek, "karıştırma" açıklaması), 4 FFN (toplantı/masa başı sezgisi, genişlet-kapı-özetle, W1/W2 anlamı, "kapı neden şart" demosu, 4→8→4 sayılı örnek) + GELU, 5 LM Head, 6 Softmax (sıcaklık), 7 Üretim döngüsü (autoregressive). |
 | `GPT2_Egitim.html` | **Eğitim (Training)** sayfası. Kartlar: 1 Büyük resim, 2 Loss, 3 Backpropagation, 4 Optimizer/LR, 5 Sayılar nereden geliyor, 6 Aktivasyon türevi (GELU/ReLU), 7 Pratik notlar. |
 | `CLAUDE.md` | Bu dosya. |
 
