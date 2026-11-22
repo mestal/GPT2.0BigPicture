@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GPT-2 Mimari Akışı ve Sezgisi</title>
+<title>GPT-2 Çıkarım (Inference) Akışı</title>
 <style>
   :root{
     --bg:#f4f6fb; --ink:#1f2937; --muted:#6b7280;
@@ -85,12 +85,24 @@
   footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:30px}
   @media(max-width:560px){h1{font-size:1.5rem}.qkv3{grid-template-columns:1fr}.head{font-size:.6rem}
     .dim-row{grid-template-columns:105px 1fr 38px;font-size:.78rem}}
+
+  .navbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 14px}
+  .navbar a{padding:8px 16px;border-radius:999px;border:1px solid #cbd5e1;background:#fff;color:#111827;text-decoration:none;font-size:.92rem}
+  .navbar a.cur{background:#111827;color:#fff;border-color:#111827;pointer-events:none}
+  a.lnk{color:#2f6fb0;font-weight:600}
+  .flow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin:10px 0}
+  .fbox{background:#fff;border:2px solid var(--c);border-radius:10px;padding:6px 10px;font-size:.84rem;text-align:center;max-width:140px}
+  .fbox b{color:var(--c)}
+  .farr{color:#94a3b8;font-size:1.2rem}
+  .ctxrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .ctxrow .tok{text-align:center;font-size:.9rem}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>GPT-2 Mimari Akışı ve Sezgisi</h1>
-  <div class="sub">GPT-2 (Generative Pre-trained Transformer 2 / Üretken Önceden Eğitilmiş Dönüştürücü 2) &nbsp;·&nbsp; Girdi: <b>"Sabah armut"</b> → Tahmin: <b>"yedim"</b><br>Küçük model: 768 boyut, 12 blok, 12 baş</div>
+  <h1>GPT-2 Çıkarım (Inference) Akışı</h1>
+  <div class="sub">GPT-2 (Generative Pre-trained Transformer 2 / Üretken Önceden Eğitilmiş Dönüştürücü 2) &nbsp;·&nbsp; Girdi: <b>"Sabah armut"</b> → Tahmin: <b>"yedim"</b><br>Küçük model: 768 boyut, 12 blok, 12 baş<br>Bu sayfada model <b>hazır ve eğitilmiş</b> kabul edilir, ağırlıklar sabittir. Sayıların nereden geldiği için <a class="lnk" href="GPT2_Egitim.html">Eğitim sayfasına</a> bak.</div>
+  <div class="navbar"><a class="cur" href="GPT2_Mimari.html">▶ Çıkarım (Inference): model nasıl çalışır?</a><a href="GPT2_Egitim.html">🎓 Eğitim (Training): sayılar nasıl öğrenilir?</a></div>
 
   <div class="controls">
     <button id="play">▶ Adım adım oynat</button>
@@ -147,7 +159,7 @@
       <div class="mini" style="display:block;text-align:center;margin:4px 0 8px">… böyle devam edip 768. boyuta kadar gider</div>
       <div class="warn"><b class="l">⚠️ Önemli: Bu sadece insanın anlaması için bir örnek.</b><br>
         Gerçekte boyutların <b>adı yoktur</b>. "1. boyut = zaman, 2. boyut = meyve" diye kimse yazmaz.
-        Bu sayıları ve her boyutun neyi temsil edeceğini <b>yapay zekanın kendisi, eğitim sırasında backpropagation (geri yayılım) ile</b> bulur (bkz. 7. kart).
+        Bu sayıları ve her boyutun neyi temsil edeceğini <b>yapay zekanın kendisi, eğitim sırasında backpropagation (geri yayılım) ile</b> bulur (bkz. <a class="lnk" href="GPT2_Egitim.html">Eğitim sayfası</a>).
         Üstelik gerçek modelde bir kavram genelde tek boyutta durmaz, <b>birçok boyuta yayılır</b>; bir boyut da birden fazla kavrama karışabilir.</div>
       <div style="margin-top:8px"><b>Gerçekte bir kelime böyle görünür</b> (adsız, pozitif ve negatif sayılar):
         <div class="tok" style="margin-top:6px;font-size:.85rem;overflow-x:auto;white-space:nowrap" id="realVec"></div>
@@ -173,17 +185,8 @@
       <div class="warn"><b class="l">⚠️ Yine insan için örnek.</b> Konum sayıları da adsızdır. GPT-2'de <b>1.024 satırlık bir tablo</b> (her sıra için bir satır) eğitimde backpropagation ile öğrenilir. Hangi boyut neyi kodlar, model kendisi karar verir. Buradaki değerler ve "konu" isimleri uydurmadır.</div>
 
       <hr class="d">
-      <h3>❓ Toplanan karışımı model nasıl "çözüyor"?</h3>
-      <div class="why"><b class="l">Kısa cevap:</b> Aslında hiçbir şeyi ayırmıyor. Ayırmasına gerek de yok. Sonraki katmanlar, karışımdan <b>ihtiyaç duydukları kısmı okumayı</b> öğreniyor.</div>
-      <ol>
-        <li><b>Toplam:</b> <span class="chip">x = kelime + konum</span></li>
-        <li><b>Sonraki ilk iş çarpma.</b> Attention'da x, ağırlık matrisleriyle çarpılır: <span class="chip">Q = x · Wq</span>. Çarpma toplamı dağıtır:
-          <div style="text-align:center;margin:6px 0"><span class="chip">x · Wq = (kelime · Wq) + (konum · Wq)</span></div>
-          Yani Wq, kelime kısmına ve konum kısmına <b>ayrı ayrı</b> etki eder. Wq'nun içindeki sayılar, hangi bilginin ne kadar ve nasıl okunacağını belirler.</li>
-        <li><b>768 boyutta yer bol.</b> Yüksek boyutlu uzayda iki farklı bilgi, birbirini ezmeden farklı yönlerde durabilir (rastgele iki vektör bile neredeyse birbirine diktir). Radyo benzetmesi: aynı antene iki istasyon aynı anda çalar, ama alıcının düğmesini çevirince birini seçersin. <b>Wq, Wk, Wv o düğmelerdir.</b></li>
-        <li><b>Düğmeleri kim çeviriyor?</b> Backpropagation. Model her tahminde şunu "dener": "Konum bilgisini kullanırsam hata (loss) azalıyor mu?" Azalıyorsa, gradyan hem Wq/Wk/Wv içindeki ilgili sayıları hem de konum tablosunu o yönde kaydırır. Kimse "konumu şöyle oku" diye yazmaz, hatayı azaltan şey azar azar pekişir.</li>
-        <li><b>Örnek:</b> "Hep bir önceki kelimeye bak" gibi davranışlar böyle ortaya çıkabilir: Q'nun ve K'nin konum kısımları, sıra n ile sıra n−1 birbirine yüksek puan verecek şekilde ayarlanır. Benzer davranan başlar GPT-2 üzerine yapılan araştırmalarda bulunmuştur.</li>
-      </ol>
+      <h3>❓ Bu sayılar nereden geldi?</h3>
+      <div class="why"><b class="l">Kısaca:</b> Kelime tablosu, konum tablosu ve Wq/Wk/Wv gibi tüm sayılar eğitimde <b>kendiliğinden</b> öğrenilir. Toplanan "kelime + konum" karışımını sonraki katmanların nasıl okuduğu da orada anlatılıyor: <a class="lnk" href="GPT2_Egitim.html#sayilar">Eğitim sayfası → "Sayılar nereden geliyor?"</a></div>
     </div>
   </section>
   <div class="arrow">↓</div>
@@ -249,22 +252,16 @@
         <div class="why"><b class="l">Neden çarpıyoruz?</b> 768 özelliği farklı kombinasyonlarla karıştırıp 3.072 yeni detay (soru) üretmek için.<br>Örnek: <i>"Hem sabah mı hem meyve mi?"</i></div>
 
         <hr class="d">
-        <h3>📈 GELU, ReLU ile aynı mı? Kaydırıp bak</h3>
+        <h3>📈 GELU nasıl davranıyor? Kaydırıp bak</h3>
         <div class="row">x değeri: <input type="range" id="gx" min="-4" max="4" step="0.05" value="1"> <span class="mono" id="gxv"></span></div>
         <svg id="gsvg" viewBox="0 0 400 220" style="width:100%;max-width:520px;display:block;margin:0 auto;background:#fff;border-radius:10px"></svg>
         <table class="pt" style="max-width:520px;margin:8px auto">
-          <tr><th>Fonksiyon</th><th>Çıktı</th><th>Türev (eğim)</th></tr>
-          <tr><td style="color:#6b7280">ReLU (Rectified Linear Unit / Doğrultulmuş Doğrusal Birim)</td><td id="rOut"></td><td id="rDer"></td></tr>
-          <tr><td style="color:#e08a1e">GELU</td><td id="gOut"></td><td id="gDer"></td></tr>
+          <tr><th>Fonksiyon</th><th>Çıktı</th></tr>
+          <tr><td style="color:#6b7280">ReLU (Rectified Linear Unit / Doğrultulmuş Doğrusal Birim)</td><td id="rOut"></td></tr>
+          <tr><td style="color:#e08a1e">GELU</td><td id="gOut"></td></tr>
         </table>
-        <div class="fix"><b>🔧 "GELU hep pozitiftir" doğru değil.</b> Hep pozitif (daha doğrusu sıfır ya da pozitif) olan <b>ReLU</b>'dur. GELU negatif girişte <b>küçük negatif değerler</b> verebilir: en düşük noktası yaklaşık <b>−0,17</b> (x ≈ −0,75 civarı), daha da negatife gidince sıfıra yaklaşır. Yani grafik doğruydu. Kaydırıcıyı x = −0,75'e getirip kendin gör. İlk çizimde "söner" yazmıştım, tam sıfır değil, sıfıra yakın demek istemiştim.</div>
-        <div class="why"><b class="l">Neden ReLU değil de GELU?</b>
-          <ul style="margin:6px 0">
-            <li><b>Senin hatırladığın doğru:</b> ReLU, x = 0 noktasında kırık olduğu için matematiksel olarak türevsizdir (soldan eğim 0, sağdan 1). Pratikte yazılım orada 0 ya da 1 seçip geçer, çok sık tam 0'a denk gelmediği için tek başına büyük sorun olmaz.</li>
-            <li><b>Daha büyük sorun:</b> ReLU'da <b>x &lt; 0 olan her yerde türev tam 0</b>'dır. Backpropagation'da türev 0 ise o nörona hiç öğrenme sinyali gitmez, nöron takılıp kalabilir ("ölü nöron" / dying ReLU).</li>
-            <li><b>GELU:</b> Her noktada türevlenebilir, eğrisi pürüzsüzdür, negatif tarafta da küçük de olsa sıfır olmayan bir eğim bırakır. Transformer modellerinde pratikte daha iyi eğitildiği için (BERT ve GPT ailesi) tercih edildi. Bu "kanıtlanmış bir teorem" değil, <b>deneylerle görülen bir üstünlük</b>.</li>
-            <li>Not: GPT-2 GELU'nun tanh ile yaklaşık hesaplanan sürümünü kullanır. Yukarıdaki grafik de onu çiziyor.</li>
-          </ul></div>
+        <div class="fix"><b>🔧 GELU hep pozitif değildir.</b> Hep sıfır ya da pozitif olan <b>ReLU</b>'dur. GELU negatif girişte <b>küçük negatif değerler</b> verebilir: en düşük noktası yaklaşık <b>−0,17</b> (x ≈ −0,75 civarı), daha da negatife gidince sıfıra yaklaşır. Kaydırıcıyı −0,75'e getirip kendin gör. Negatifleri "tam sıfırlamaz", sıfıra yakın bir değere söndürür.</div>
+        <div class="why"><b class="l">Neden ReLU değil de GELU?</b> Bu sorunun cevabı <b>türevle</b> ilgili, yani eğitimle. Burada sadece şunu bil: GELU pürüzsüz bir eğridir, ReLU'nun keskin köşesi yoktur. Detay için: <a class="lnk" href="GPT2_Egitim.html#aktivasyon">Eğitim sayfası → "Aktivasyonun türevi"</a></div>
       </div>
     </section>
   </div>
@@ -287,46 +284,37 @@
     <div class="row">Ham puanlar % olasılığa çevrilir → en yüksek: <b>"yedim"</b></div>
     <div class="detail">
       <div class="bars" id="smBars"></div>
-      <p style="font-size:.85rem;color:var(--muted);margin-top:26px">Not: Yüzdeler anlatım için uydurma örnek değerlerdir, gerçek GPT-2 çıktısı değil.</p>
+      <div class="row" style="margin-top:34px">Temperature (Sıcaklık): <input type="range" id="temp" min="0.2" max="3" step="0.05" value="1"> <span class="mono" id="tempv"></span></div>
+      <div class="row"><button class="alt" id="draw">🎲 Olasılığa göre kura çek</button> <span id="drawRes"></span></div>
+      <div class="why"><b class="l">Sezgi:</b> Sıcaklık düşükse model hep en yüksek olasılıklıyı seçer (tutarlı, tekdüze). Yüksekse olasılıklar birbirine yaklaşır, daha şaşırtıcı (ama daha hatalı olabilen) seçimler çıkar. Gerçek sistemlerde çoğu zaman "en yükseği al" yerine olasılığa göre kura çekilir.</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:26px">Not: Yüzdeler anlatım için uydurma örnek değerlerdir. Sıcaklık T için: yeni olasılık ∝ eski olasılık^(1/T).</p>
     </div>
   </section>
-  <div class="arrow">↓ (eğitimde: tahmin gerçek cevapla karşılaştırılır)</div>
+  <div class="arrow">↓ (seçilen kelime girdiye eklenir, akış başa döner)</div>
 
   <!-- 7 -->
-  <section class="card open" id="c7" data-shape="Loss: tek bir sayı" data-note="Hata sondan başa doğru dağıtılıyor">
-    <h2>7. Eğitim: Loss (Kayıp) ve Backpropagation (Geri Yayılım) <small>başlığa tıkla</small></h2>
-    <div>Tahmin yanlışsa, hata <b>sondan başa doğru</b> dağıtılır ve her ağırlık hatayı azaltacak yönde azar azar değiştirilir. Bu bütün kartlardaki sayıları (tablolar, Wq, Wk, Wv, FFN...) öğrenen mekanizmadır.</div>
+  <section class="card open" id="c7" data-shape="Girdi 1 token uzar" data-note="Her turda 1 yeni token">
+    <h2>7. Üretim Döngüsü (Autoregressive / Kendi çıktısını girdi yapan üretim) <small>başlığa tıkla</small></h2>
+    <div>Model aynı anda tüm cümleyi değil, <b>sadece bir sonraki token'ı</b> üretir. Seçileni girdiye ekler ve 1–6. adımları baştan çalıştırır. ChatGPT'nin kelime kelime yazması bundan.</div>
     <div class="detail">
-      <ol>
-        <li><b>İleri yayılım (forward pass):</b> 1. karttan 6. karta kadar akış, sonunda bir tahmin.</li>
-        <li><b>Loss (Kayıp):</b> Tahmin gerçek cevapla karşılaştırılır. GPT-2'de Cross-Entropy (Çapraz Entropi): doğru kelimeye verilen olasılığın −ln'si. Gerçek cevap "yedim" olsun: model %62 verdiyse loss = −ln(0,62) ≈ <b>0,48</b> (iyi). %2 verdiyse loss ≈ <b>3,9</b> (kötü).</li>
-        <li><b>Geri yayılım (backpropagation):</b> Her ağırlık için sorulur: "Bu sayıyı çok az artırırsam loss ne kadar ve hangi yönde değişir?" Bu cevap türevdir (gradient / eğim). Sondan başlanır, zincir kuralıyla (chain rule) her katmanın kendi türevi çarpılarak geriye taşınır.</li>
-        <li><b>Güncelleme:</b> <span class="chip">w_yeni = w_eski − LR × türev</span>. LR (Learning Rate / Öğrenme Hızı) adım büyüklüğüdür. Bu işi yapan şey optimizer'dır (GPT-2'de Adam: Adaptive Moment Estimation / Uyarlanabilir Moment Tahmini).</li>
-        <li>Bu <b>milyonlarca kez</b>, çok büyük metin üzerinde tekrarlanır. Her seferinde sayılar azıcık kayar.</li>
-      </ol>
-
-      <div class="good"><b>✅ Senin cümlen büyük ölçüde doğru:</b> "Sondan başa doğru türev alınır ve ağırlıklar güncellenir." Bu doğru. Tüm ağırlıklar bu şekilde öğrenilir: embedding tabloları, konum tablosu, Wq/Wk/Wv, FFN matrisleri.</div>
-      <div class="fix"><b>🔧 İnce ayar 1:</b> Türevi alınan şey "her işlemin kendi türevi" değil, <b>loss'un o ağırlığa göre türevidir</b>. Her işlemin yerel türevi zincir kuralıyla çarpılıp oraya taşınır. Sonda hesaplanan bir sayı, geriye giderken çarpılarak ilk ağırlığa kadar ulaşır.</div>
-      <div class="fix"><b>🔧 İnce ayar 2:</b> Backpropagation <b>sadece türevleri hesaplar</b>. Ağırlıkları güncelleyen ayrı bir adım olan optimizer'dır. Pratikte önce tüm türevler hesaplanır, sonra güncelleme yapılır.</div>
-      <div class="fix"><b>🔧 İnce ayar 3:</b> Embedding tablosunda (50.257 satır) her adımda sadece o adımda kullanılan token'ların satırları türev alır. Geri kalanlar o adımda değişmez.</div>
-      <div class="fix"><b>🔧 İnce ayar 4:</b> Aktivasyon (GELU) türevlenebilir olmalıdır ki zincir kopmasın. ReLU'da negatif bölgede türev 0 olunca zincir orada sönüyordu (4. karta bak).</div>
-
-      <hr class="d">
-      <h3>🧪 Minik örnek: 2 ağırlıklı ağ, zincir kuralını izle</h3>
-      <div>Ağ: <span class="chip">a = w1 · x</span> → <span class="chip">y = w2 · a</span>. Girdi x = 2, hedef t = 3. Loss = (y − t)². Başlangıçta w1 = 0,5 ve w2 = 1,0. LR = 0,05.</div>
-      <div class="row">
-        <button id="bpStep">1 adım at</button>
-        <button class="alt" id="bpTen">10 adım at</button>
-        <button class="alt" id="bpReset">Sıfırla</button>
-      </div>
-      <div id="bpOut"></div>
-      <div class="warn"><b class="l">⚠️</b> Bu küçük örnekte sadece 2 ağırlık var. GPT-2 small'da yaklaşık 124 milyon var, mantık aynı: önce tahmin, sonra loss, sonra geriye türev, sonra küçük güncelleme.</div>
+      <div class="row"><button id="genStep">▶ Bir token üret</button><button class="alt" id="genReset">Sıfırla</button></div>
+      <div id="genOut"></div>
+      <ul>
+        <li><b>Neden sadece son token?</b> 5. kartta gördüğün gibi her turda yalnızca son konumun vektörü puana çevrilir.</li>
+        <li><b>Boşa hesap yapmıyor mu?</b> Eski token'ların K ve V vektörleri her turda aynı çıkar. Bu yüzden saklanır: KV cache (Key-Value Cache / Anahtar-Değer Önbelleği). Her turda sadece yeni token hesaplanır.</li>
+        <li><b>Ne zaman durur?</b> Model özel bir bitiş token'ı seçince (GPT-2'de &lt;|endoftext|&gt;) ya da uzunluk sınırına gelince (1.024 token).</li>
+        <li><b>Çıkarımda hedef bilinmez:</b> Doğru cevap yok, model kendi tahminini üretir. Hata hesaplanmaz, ağırlıklar değişmez. Hata ve güncelleme <a class="lnk" href="GPT2_Egitim.html">Eğitim sayfasının</a> konusu.</li>
+      </ul>
+      <div class="warn"><b class="l">⚠️</b> Token ID'ler ve olasılıklar anlatım için uydurmadır.</div>
     </div>
   </section>
 
   <div class="quiz">
     <b>📖 Kısaltmalar sözlüğü</b>
     <table class="pt gl" style="margin-top:8px">
+      <tr><td>Autoregressive</td><td>Autoregressive / Kendi çıktısını girdi yapan (kendinden geriye bağlı) üretim</td></tr>
+      <tr><td>KV cache</td><td>Key-Value Cache / Anahtar-Değer Önbelleği</td></tr>
+      <tr><td>Temperature</td><td>Temperature / Sıcaklık (seçimin ne kadar rastgele olacağını ayarlar)</td></tr>
       <tr><td>GPT</td><td>Generative Pre-trained Transformer / Üretken Önceden Eğitilmiş Dönüştürücü</td></tr>
       <tr><td>ID</td><td>Identifier / Kimlik numarası</td></tr>
       <tr><td>Token</td><td>Token / Metnin parçası (sözcük ya da sözcük parçası)</td></tr>
@@ -340,14 +328,7 @@
       <tr><td>LM Head</td><td>Language Model Head / Dil Modeli Çıkış Katmanı</td></tr>
       <tr><td>Logits</td><td>Logits / Ham puanlar (henüz yüzdeye çevrilmemiş)</td></tr>
       <tr><td>Softmax</td><td>Softmax / Yumuşatılmış Maksimum: puanları yüzdeye çeviren fonksiyon</td></tr>
-      <tr><td>Loss</td><td>Loss / Kayıp (hata miktarı)</td></tr>
-      <tr><td>Cross-Entropy</td><td>Cross-Entropy / Çapraz Entropi (loss türü)</td></tr>
-      <tr><td>Backpropagation</td><td>Backpropagation / Geri Yayılım</td></tr>
-      <tr><td>Gradient</td><td>Gradient / Eğim, türev (loss'un ağırlığa göre değişimi)</td></tr>
-      <tr><td>LR</td><td>Learning Rate / Öğrenme Hızı</td></tr>
-      <tr><td>Adam</td><td>Adaptive Moment Estimation / Uyarlanabilir Moment Tahmini (optimizer)</td></tr>
       <tr><td>Causal mask</td><td>Causal Mask / Nedensel Maske (geleceğe bakmayı engeller)</td></tr>
-      <tr><td>Forward pass</td><td>Forward pass / İleri yayılım</td></tr>
     </table>
   </div>
 
@@ -357,10 +338,11 @@
     <div id="quizRes" style="margin-top:8px"></div>
   </div>
 
-  <footer>Gemini görselinden etkileşimli HTML'e dönüştürüldü · Geliştirmek için yeni bölüm isteyebilirsin</footer>
+  <footer>Gemini görselinden etkileşimli HTML'e dönüştürüldü · Eğitim kısmı için <a class="lnk" href="GPT2_Egitim.html">GPT2_Egitim.html</a></footer>
 </div>
 
 <script>
+
 const cards=[...document.querySelectorAll('.card')];
 let idx=-1, timer=null;
 
@@ -371,11 +353,6 @@ const heads=document.getElementById('heads');
 for(let i=1;i<=12;i++){const h=document.createElement('div');h.className='head';h.textContent='Baş '+i;
   h.onclick=e=>{e.stopPropagation();h.classList.toggle('sel')};heads.appendChild(h)}
 
-// softmax çubukları
-const probs=[['yedim',62],['yedi',14],['aldım',9],['sevdim',6],['içtim',3]];
-const sb=document.getElementById('smBars');
-probs.forEach(([w,p],i)=>{const b=document.createElement('div');b.className='bar'+(i==0?' win':'');b.style.height=(p*1.3)+'px';
-  b.innerHTML='<span>%'+p+'</span><i>'+w+'</i>';sb.appendChild(b)});
 
 // ---------- 768 boyut örneği ----------
 const dims=[['Gün zamanı',[0.92,0.02]],['Meyve / yiyecek',[0.03,0.95]],['Tatlılık',[0.10,0.70]],
@@ -454,45 +431,43 @@ function renderG(){
   s+='<text x="8" y="14" font-size="10" fill="#6b7280">gri: ReLU</text><text x="8" y="28" font-size="10" fill="#e08a1e">turuncu: GELU</text>';
   document.getElementById('gsvg').innerHTML=s;
   document.getElementById('rOut').textContent=relu(x).toFixed(3);
-  document.getElementById('rDer').textContent=Math.abs(x)<1e-9?'tanımsız (kırık nokta)':(x>0?'1':'0 (öğrenme sinyali yok)');
   document.getElementById('gOut').textContent=gelu(x).toFixed(3);
-  document.getElementById('gDer').textContent=gder(x).toFixed(3);
 }
 document.getElementById('gx').oninput=renderG;
 renderG();
 
-// ---------- Backprop mini örnek ----------
-const BP0={w1:0.5,w2:1.0,x:2,t:3,lr:0.05};
-let bp,bpHist;
-function bpReset(){bp={...BP0};bpHist=[];bpRender(null)}
-function bpCompute(){
-  const a=bp.w1*bp.x,y=bp.w2*a,L=(y-bp.t)**2;
-  const dy=2*(y-bp.t),g2=dy*a,da=dy*bp.w2,g1=da*bp.x;
-  return {a,y,L,dy,g2,da,g1};
+
+// ---------- Softmax + sıcaklık ----------
+const P0=[['yedim',62],['yedi',14],['aldım',9],['sevdim',6],['içtim',5],['kokladım',4]];
+function tempProbs(T){const a=P0.map(([w,p])=>Math.pow(p/100,1/T));const s=a.reduce((x,y)=>x+y,0);return a.map(v=>v/s)}
+function renderSm(){
+  const T=parseFloat(document.getElementById('temp').value);
+  document.getElementById('tempv').textContent='T = '+T.toFixed(2);
+  const pr=tempProbs(T), mx=Math.max(...pr);
+  const sb=document.getElementById('smBars');sb.innerHTML='';
+  pr.forEach((p,i)=>{const b=document.createElement('div');b.className='bar'+(p===mx?' win':'');b.style.height=(p*130)+'px';
+    b.innerHTML='<span>%'+(p*100).toFixed(0)+'</span><i>'+P0[i][0]+'</i>';sb.appendChild(b)});
 }
-function bpStep(){
-  const c=bpCompute();bpHist.push(c.L);
-  bp.w2-=bp.lr*c.g2;bp.w1-=bp.lr*c.g1;
-  bpRender(c);
+document.getElementById('temp').oninput=renderSm;
+document.getElementById('draw').onclick=e=>{e.stopPropagation();
+  const T=parseFloat(document.getElementById('temp').value),pr=tempProbs(T);let r=Math.random(),k=0;
+  for(;k<pr.length-1;k++){r-=pr[k];if(r<=0)break}
+  document.getElementById('drawRes').innerHTML='Kura sonucu: <b>'+P0[k][0]+'</b>'};
+renderSm();
+
+// ---------- Üretim döngüsü ----------
+const GEN=[{tok:'yedim',p:62},{tok:'.',p:48},{tok:'&lt;|endoftext|&gt;',p:35}];
+let gen=0,ctx=['Sabah','armut'];
+function renderGen(){
+  let h='<div class="ctxrow">'+ctx.map((t,i)=>'<span class="tok">'+t+'<br><span class="mini">sıra '+i+'</span></span>').join('')+'</div>';
+  if(gen<GEN.length){const g=GEN[gen];
+    h+='<div class="why"><b class="l">Tur '+(gen+1)+':</b> 1–6. adımlar çalışır. Son token ("'+ctx[ctx.length-1]+'") vektörü → 50.257 puan → softmax → en olası: <b>'+g.tok+'</b> (%'+g.p+'). Girdiye eklenir, bir sonraki tur başlar.</div>';
+  } else h+='<div class="good"><b>Bitti.</b> Model bitiş token\'ını seçti, üretim durdu. Sonuç: <b>"Sabah armut yedim."</b></div>';
+  document.getElementById('genOut').innerHTML=h;
 }
-function bpRender(last){
-  const c=bpCompute();
-  let h='<table class="pt"><tr><th>Adım</th><th>w1</th><th>w2</th><th>y (tahmin)</th><th>Loss</th></tr>';
-  h+='<tr><td>şimdi</td><td>'+bp.w1.toFixed(3)+'</td><td>'+bp.w2.toFixed(3)+'</td><td>'+c.y.toFixed(3)+'</td><td class="tot">'+c.L.toFixed(4)+'</td></tr></table>';
-  h+='<div class="why"><b class="l">İleri:</b> a = '+bp.w1.toFixed(3)+' × 2 = '+c.a.toFixed(3)+' → y = '+bp.w2.toFixed(3)+' × '+c.a.toFixed(3)+' = '+c.y.toFixed(3)+'<br>';
-  h+='<b class="l">Geri (sondan başa):</b><br>'+
-     '① dLoss/dy = 2(y − t) = '+c.dy.toFixed(3)+'<br>'+
-     '② dLoss/dw2 = ① × a = '+c.g2.toFixed(3)+'<br>'+
-     '③ dLoss/da = ① × w2 = '+c.da.toFixed(3)+'<br>'+
-     '④ dLoss/dw1 = ③ × x = '+c.g1.toFixed(3)+' <span style="color:#6b7280">(zincir: ① × w2 × x)</span><br>'+
-     '<b class="l">Güncelle:</b> w = w − 0,05 × türev. Türev negatif → ağırlık artar → tahmin hedefe (3) yaklaşır.</div>';
-  if(bpHist.length) h+='<div style="font-size:.85rem;color:#6b7280">Loss geçmişi: '+bpHist.map(v=>v.toFixed(2)).join(' → ')+'</div>';
-  document.getElementById('bpOut').innerHTML=h;
-}
-document.getElementById('bpStep').onclick=e=>{e.stopPropagation();bpStep()};
-document.getElementById('bpTen').onclick=e=>{e.stopPropagation();for(let i=0;i<10;i++)bpStep()};
-document.getElementById('bpReset').onclick=e=>{e.stopPropagation();bpReset()};
-bpReset();
+document.getElementById('genStep').onclick=e=>{e.stopPropagation();if(gen<GEN.length){ctx.push(GEN[gen].tok);gen++;renderGen()}};
+document.getElementById('genReset').onclick=e=>{e.stopPropagation();gen=0;ctx=['Sabah','armut'];renderGen()};
+renderGen();
 
 // ---------- kart gezintisi ----------
 function setActive(i){
@@ -534,6 +509,7 @@ const qb=document.getElementById('quizBtns');
 opts.forEach(([t,ok])=>{const b=document.createElement('button');b.className='alt';b.textContent=t;
   b.onclick=()=>{document.getElementById('quizRes').innerHTML=ok?'<span class="ok">✅ Doğru! Konum tablosu 1.024 × 768 olduğu için.</span>':'<span class="no">❌ Tekrar dene. İpucu: Konum tablosunun satır sayısına bak.</span>'};
   qb.appendChild(b)});
+
 </script>
 </body>
 </html>
