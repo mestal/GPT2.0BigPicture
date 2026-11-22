@@ -67,10 +67,21 @@ GPT-2'yi (Generative Pre-trained Transformer 2 / Üretken Önceden Eğitilmiş D
 - Cihazdaki kabuk (`device_bash`) bu klasörleri bağlayamayabiliyor. Dosya silme/taşıma gerekirse kullanıcıya bırak.
 - Aynı klasörde `.git` var. **Kullanıcı istemedikçe commit atma.**
 
-## Commit kuralları
+## Commit mesajı kuralları
 
-- Commit mesajları **Türkçe** olsun: kısa bir başlık satırı, altında madde madde değişiklikler.
-- Kullanıcı mesaj istediğinde (commit atmadan) önerilen mesajı sohbette ver.
+- **Dosyalarda yaptığın her değişiklikten sonra, yanıtının sonunda o değişiklik için Türkçe bir commit mesajı ver.** Kullanıcı ayrıca istemese de.
+- Commit'i kendin atma, sadece mesajı ver. (Kullanıcı açıkça "commit at" derse at.) Commit atarsan, oturumun istediği `Co-Authored-By` ve oturum bağlantısı satırlarını mesajın sonuna ekle.
+- Mesajı bir **kod bloğu** içinde ver ki kolay kopyalansın.
+- Biçim: ilk satır kısa başlık (yaklaşık 70 karakteri geçmesin), boş satır, altında `- ` ile madde madde değişiklikler.
+- Mesaj **gerçekte yapılan** değişikliği yansıtsın: tek seferde birden çok dosya değiştiyse hepsini kapsa, yapılmayanı yazma.
+- Yalnızca CLAUDE.md değiştiyse de mesaj ver.
+
+## Her değişikliğin sonunda kontrol listesi
+
+1. Sayfayı tarayıcıda aç, konsol hatası ve düğme/kaydırıcı testi.
+2. Dosyayı yaz (CRLF), ~5 sn bekle, commit et, `device_list_dir` ile boyutu doğrula.
+3. Yeni kart, dosya ya da kural eklendiyse **bu dosyadaki** "Dosyalar" tablosunu ve ilgili bölümleri güncelle.
+4. Yanıtın sonunda Türkçe commit mesajını ver.
 
 ## Fikir listesi (kararlaştırılmadı, kullanıcı onayı gerekir)
 
